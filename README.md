@@ -4,28 +4,37 @@ TrackMe is a custom, low-level http/1 and h2 server, that responds with the fine
 
 It returns the ja3, akamai h2 fingerprint, header + header order, h2 frames, and much more.
 
-## Generating the certificates and config
+## Running it (Docker Compose)
 
-You first need to generate the certificate.pem and the key.pem files.
+Nothing to set up first — just:
+
+```bash
+$ docker compose up --build
+# visit https://localhost/api/all
+```
+
+On first start the container generates a self-signed certificate into a
+named volume (`trackme-certs`) and copies `config.example.json` to
+`config.json` inside the container. To customize, edit
+`config.example.json` before the first build, or exec into the container
+and edit `/app/config.json`.
+
+## Generating the certificates and config manually
+
+If you'd rather manage the certificate and config yourself, generate them:
 
 ```bash
 $ mkdir certs
 $ openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/chain.pem -sha256 -days 365 -nodes
-```
-
-Then, you need to copy the example config (and maybe edit it)
-
-```bash
 $ cp config.example.json config.json
-$ nano config.json
-...
 ```
 
-## Running it (Docker)
+Then bind-mount them into the container by adding to `docker-compose.yml`:
 
-```bash
-$ docker build -t "trackme:Dockerfile" .
-$ docker run -p 80:80 -p 443:443 "trackme:Dockerfile"
+```yaml
+    volumes:
+      - ./certs:/app/certs
+      - ./config.json:/app/config.json
 ```
 
 ## Running it (Without Docker)
@@ -111,16 +120,6 @@ Returns the most seen other identifiers (user-agent, JA3, peetprint) that were s
 Param: `?by=<peetprint>`
 
 Returns the most seen other identifiers (user-agent, h2, JA3) that were seen together with this identifier. Only works when connected to a database.
-
-## Docker
-
-You can also run the server in a docker container using docker-compose.
-
-```bash
-# generate certs and update your config.json
-docker-compose -up --build
-# visit https://localhost/api/all
-```
 
 ## TLS & HTTP2 fingerprinting resources
 
